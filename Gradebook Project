@@ -1,0 +1,517 @@
+#include <iostream>
+#include <fstream>
+#include <fstream>
+#include <iomanip>
+#include <map>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+struct Student {
+    int student_number;
+    string first_name;
+    string last_name;
+    vector<int> programming_grades;
+    vector<int> test_grades;
+    int final_exam_grade;
+    double final_grade;
+};
+
+struct GradeBook {
+    int num_programs;
+    int num_tests;
+    int num_final_exams;
+    int programs_weight;
+    int tests_weight;
+    int final_exam_weight;
+    map<int, Student> students;
+};
+
+void display_menu();
+void execute_command(GradeBook& grade_book, char command, ofstream& transactions);
+void setup_semester(GradeBook& grade_book, ofstream& transactions);
+void add_student(GradeBook& grade_book, ofstream& transactions);
+void record_programming_grade(GradeBook& grade_book, ofstream& transactions);
+void record_test_grade(GradeBook& grade_book, ofstream& transactions);
+void record_final_exam_grade(GradeBook& grade_book, ofstream& transactions);
+void change_grade(GradeBook& grade_book, ofstream& transactions);
+void calculate_final_grade(GradeBook& grade_book, ofstream& transactions);
+void output_grade_data(GradeBook& grade_book, ofstream& transactions);
+void save_data_to_file(GradeBook& grade_book, ofstream& transactions);
+void read_in_gradebook(GradeBook& grade_book);
+
+int main() {
+    GradeBook grade_book;
+    char command;
+    ofstream transactions("Grades.trn");
+
+    read_in_gradebook(grade_book);
+    do {
+        display_menu();
+        cin >> command;
+        execute_command(grade_book, toupper(command), transactions);
+    } while (command != 'Q' && command != 'q');
+
+    cout << "now leaving program. have a nice day!" << endl;
+    transactions.close();
+    return 0;
+}
+
+void display_menu() {
+    cout << "Grade Book Menu:\n";
+    cout << "S - Set up for new semester\n";
+    cout << "A - Add a student\n";
+    cout << "P - Record programming assignment grade for all students\n";
+    cout << "T - Record test grade for all students\n";
+    cout << "F - Record final exam grade for all students\n";
+    cout << "C - Change a grade for a particular student\n";
+    cout << "G - Calculate final grade\n";
+    cout << "O - Output the grade data\n";
+    cout << "Q - Quit\n";
+    cout << "Enter a command: ";
+}
+
+void execute_command(GradeBook& grade_book, char command, ofstream& transactions) {
+    switch (command) {
+        case 'S': setup_semester(grade_book, transactions); break;
+        case 'A': add_student(grade_book, transactions); break;
+        case 'P': record_programming_grade(grade_book, transactions); break;
+        case 'T': record_test_grade(grade_book, transactions); break;
+        case 'F': record_final_exam_grade(grade_book, transactions); break;
+        case 'C': change_grade(grade_book, transactions); break;
+        case 'G': calculate_final_grade(grade_book, transactions); break;
+        case 'O': output_grade_data(grade_book, transactions); break;
+        case 'Q': save_data_to_file(grade_book, transactions); break;
+        default: cout << "Invalid command. Please try again.\n";
+    }
+}
+
+void setup_semester(GradeBook& grade_book, ofstream& transactions) {
+	bool invalid = true;
+	do{
+		cout << "Enter the number of programming assignments (0-6): ";
+		cin >> grade_book.num_programs;
+		if (grade_book.num_programs > 6 || grade_book.num_programs < 0){
+			cout << "that is in invalid value, please try again." << endl;
+		}
+		else {
+			invalid = false;
+		}
+	}while (invalid);
+	invalid = true;
+	do{
+		cout << "Enter the number of tests (0-4): ";
+		cin >> grade_book.num_tests;
+		if (grade_book.num_tests > 4 || grade_book.num_tests < 0){
+			cout << "that is in invalid value, please try again." << endl;
+		}
+		else {
+			invalid = false;
+		}
+	}while (invalid);
+	invalid = true;
+	do{
+		cout << "Enter the number of final exams (0-1): ";
+		cin >> grade_book.num_final_exams;
+		if (grade_book.num_final_exams > 1 || grade_book.num_final_exams < 0){
+			cout << "that is in invalid value, please try again." << endl;
+		}
+		else {
+			invalid = false;
+		}
+	}while (invalid);
+
+    int total_weight;
+    cout << "please enter the total weights (equaling up to 100)" << endl;
+
+    do {
+        cout << "Enter the relative weight of programs (percentage): ";
+        cin >> grade_book.programs_weight;
+        cout << "Enter the relative weight of tests (percentage): ";
+        cin >> grade_book.tests_weight;
+        cout << "Enter the relative weight of the final exam (percentage): ";
+        cin >> grade_book.final_exam_weight;
+
+        total_weight = grade_book.programs_weight + grade_book.tests_weight + grade_book.final_exam_weight;
+
+        if (total_weight != 100) {
+            cout << "The total weight of programs, tests, and the final exam should be 100%. Please re-enter the weights.\n";
+        }
+    } while (total_weight != 100);
+
+    grade_book.students.clear();
+
+    transactions << "A new grade book has been made with "	<< grade_book.num_programs << " assignments "
+    														<< grade_book.num_tests <<" tests and "
+															<< grade_book.num_final_exams <<" final exam(s) "
+				<< "with weights of " 	<< grade_book.programs_weight << ", "
+										<< grade_book.tests_weight << ", and "
+										<< grade_book.final_exam_weight << " respectively." << endl;
+}
+
+void add_student(GradeBook& grade_book, ofstream& transactions) {
+    Student student;
+	bool invalid = true;
+	do{
+		cout << "Enter the student's number (1-9999): ";
+		cin >> student.student_number;
+		if (student.student_number > 9999 || student.student_number < 1){
+			cout << "that is in invalid value, please try again." << endl;
+		}
+		else {
+			invalid = false;
+		}
+	}while (invalid);
+    cout << "Enter the student's last name: ";
+    cin >> student.last_name;
+    cout << "Enter the student's first name: ";
+    cin >> student.first_name;
+
+    student.programming_grades.resize(grade_book.num_programs, -1);
+    student.test_grades.resize(grade_book.num_tests, -1);
+    student.final_exam_grade = -1;
+    student.final_grade = -1;
+
+    grade_book.students[student.student_number] = student;
+
+    transactions << "new student " << student.last_name << ", " << student.first_name
+    			<< " with student number " << student.student_number << " has been entered into the grade book." << endl;
+}
+
+void record_programming_grade(GradeBook& grade_book, ofstream& transactions) {
+    if (grade_book.num_programs == 0) {
+        cout << "There are no programs to grade.\n";
+        transactions << "an attempt to add assignment grades was made, no effect due to lack of assignments." << endl;
+        return;
+    }
+    int program_number;
+    cout << "Enter the program number to be recorded: ";
+    cin >> program_number;
+
+    if (program_number < 1 || program_number > grade_book.num_programs) {
+        cout << "Invalid program number.\n";
+        return;
+    }
+
+    for (auto& entry : grade_book.students) {
+		Student& student = entry.second;
+		if (student.programming_grades[program_number - 1] == -1){
+			bool keepGoing = true;
+			do{
+				cout << "Enter the grade for " << student.last_name << ", " << student.first_name << ": ";
+				cin >> student.programming_grades[program_number - 1];
+				if (student.programming_grades[program_number - 1] > 100 || student.programming_grades[program_number - 1] < 0){
+					cout << "the grades should be between 0-100. please enter different number." << endl;
+				}
+				else{
+					keepGoing = false;
+				}
+			}while(keepGoing);
+		}
+		else{}//don't enter the data for the student if the grade has already been changed before
+    }
+    cout << "all student data for this program has been entered." << endl;
+
+    transactions << "grades for programming assignment " << program_number << " have been added." << endl;
+}
+
+void record_test_grade(GradeBook& grade_book, ofstream& transactions) {
+    if (grade_book.num_tests == 0) {
+        cout << "There are no tests to grade.\n";
+        transactions << "an attempt to add grades to tests was made, no effect due to lack of tests." << endl;
+        return;
+    }
+    int test_number;
+    cout << "Enter the test number to be recorded: ";
+    cin >> test_number;
+
+    if (test_number < 1 || test_number > grade_book.num_tests) {
+        cout << "Invalid test number.\n";
+        return;
+    }
+
+    for (auto& entry : grade_book.students) {
+		Student& student = entry.second;
+		if (student.test_grades[test_number - 1] == -1){
+			bool keepGoing = true;
+			do{
+				cout << "Enter the grade for " << student.last_name << ", " << student.first_name << ": ";
+				cin >> student.test_grades[test_number - 1];
+				if (student.test_grades[test_number - 1] > 100 || student.test_grades[test_number - 1] < 0){
+					cout << "the grades should be between 0-100. please enter different number." << endl;
+				}
+				else{
+					keepGoing = false;
+				}
+			}while(keepGoing);
+		}
+		else{}//do nothing
+    }
+    cout << "all student data for this test has been entered." << endl;
+    transactions << "grades for test " << test_number << " have been added." << endl;
+}
+
+void record_final_exam_grade(GradeBook& grade_book, ofstream& transactions) {
+	if (grade_book.num_final_exams == 0){
+		cout << "there is no final exam to grade \n";
+        transactions << "an attempt to add grades to final exams was made, no effect due to lack of exams." << endl;
+		return;
+	}
+
+    for (auto& entry : grade_book.students) {
+    	Student& student = entry.second;
+    	if (student.final_exam_grade == -1){
+			bool keepGoing = true;
+			do{
+				cout << "Enter the grade for " << student.last_name << ", " << student.first_name << ": ";
+				cin >> student.final_exam_grade;
+				if (student.final_exam_grade > 100 || student.final_exam_grade < 0){
+					cout << "the grades should be between 0-100. please enter different number." << endl;
+				}
+				else{
+					keepGoing = false;
+				}
+			}while(keepGoing);
+    	}
+    	else{}//already entered
+    }
+    transactions << "grades for final exam have been added."<< endl;
+}
+
+void change_grade(GradeBook& grade_book, ofstream& transactions) {
+    int student_number;
+    cout << "Enter the student number: ";
+    cin >> student_number;
+
+    auto it = grade_book.students.find(student_number);
+    if (it == grade_book.students.end()) {
+        cout << "Student not found.\n";
+        transactions << "attempt to change grade was made, student not found." << endl;
+        return;
+    }
+
+    Student& student = it->second;
+    char grade_type;
+    bool keepGoing = true;
+    do{
+    	cout << "Enter the type of grade to change (P - Programming, T - Test, F - Final Exam): ";
+    	cin >> grade_type;
+    	if (grade_type == 'P' || grade_type == 'p' || grade_type == 'T' || grade_type == 't' || grade_type == 'F' || grade_type == 'f'){
+    		keepGoing = false;
+    	}
+    	else{
+    		cout << "that is not a valid input, please try again." << endl;
+    	}
+    }while(keepGoing);
+
+    int new_grade;
+    keepGoing = true;
+    do{
+    	cout << "Enter the new grade: ";
+    	cin >> new_grade;
+    	if (new_grade > 100 || new_grade < 0){
+    		cout << "that is not a valid input, please try again." << endl;
+    	}
+    	else {
+    		keepGoing = false;
+    	}
+    }while(keepGoing);
+
+    int index;
+    switch (toupper(grade_type)) {
+        case 'P':
+            cout << "Enter the program number: ";
+            cin >> index;
+            if (index >= 1 && index <= grade_book.num_programs) {
+                student.programming_grades[index - 1] = new_grade;
+                transactions << "student number " << student_number << "'s program #" << index << " has been updated to " << new_grade << "." << endl;
+            } else {
+                cout << "Invalid program number.\n";
+                transactions << "attempt to change grade failed, bad program number was entered." << endl;
+            }
+            break;
+        case 'T':
+            cout << "Enter the test number: ";
+            cin >> index;
+            if (index >= 1 && index <= grade_book.num_tests) {
+                student.test_grades[index - 1] = new_grade;
+                transactions << "student number " << student_number << "'s test #" << index << " has been updated to " << new_grade << "." << endl;
+            } else {
+                cout << "Invalid test number.\n";
+                transactions << "attempt to change grade failed, bad test number was entered." << endl;
+            }
+            break;
+        case 'F':
+            student.final_exam_grade = new_grade;
+            transactions << "student number " << student_number << "'s final exam has been updated to " << new_grade << "." << endl;
+            break;
+        default:
+            cout << "Invalid grade type.\n";
+            transactions << "attempt to change grade failed, bad data." << endl;
+    }
+}
+
+void calculate_final_grade(GradeBook& grade_book, ofstream& transactions) {
+    for (auto& entry : grade_book.students) {
+        Student& student = entry.second;
+
+        double program_sum = 0;
+        for (int grade : student.programming_grades) {
+            program_sum += grade;
+        }
+        double program_avg = program_sum / grade_book.num_programs;
+
+        double test_sum = 0;
+        for (int grade : student.test_grades) {
+            test_sum += grade;
+        }
+        double test_avg = test_sum / grade_book.num_tests;
+
+        student.final_grade = program_avg * grade_book.programs_weight / 100 +
+                              test_avg * grade_book.tests_weight / 100 +
+                              student.final_exam_grade * grade_book.final_exam_weight / 100;
+    }
+    cout << "final grade for the students have been calculated!" << endl;
+    transactions << "final grades have been calculated." << endl;
+}
+
+void output_grade_data(GradeBook& grade_book, ofstream& transactions) {
+    ofstream out("Grades.out");
+
+    out << left << setw(12) << "Student #" << setw(20) << "Last Name" << setw(20) << "First Name";
+    for (int i=0;i<grade_book.num_programs;i++){
+    	out << setw(12) << "assignment #" << setw(3) << i+1; //15 spaces
+    }
+    for (int i=0;i<grade_book.num_tests;i++){
+    	out << setw(6) << "test #" << setw(4) << i+1;		//10 spaces
+    }
+    if(grade_book.num_final_exams == 1){
+    	out << setw(12) << "final exam";					//12 spaces
+    }
+    out << setw(10) << "Final Grade" << endl;
+
+    for (const auto& entry : grade_book.students) {
+        const Student& student = entry.second;
+        out << left << setw(12) << student.student_number << setw(20) << student.last_name << setw(20) << student.first_name;
+        for (int grade : student.programming_grades){
+        	if(grade == -1){
+        		out << setw(15) << "N/A";
+        	}
+        	else{
+        		out << setw(15) << grade;
+        	}
+        }
+        for (int grade : student.test_grades){
+        	if(grade == -1){
+        		out << setw(10) << "N/A";
+        	}
+        	else{
+        		out << setw(10) << grade;
+        	}
+        }
+        if (student.final_exam_grade == -1){
+        	out << setw(12) << "N/A";
+        }
+        else{
+        	out << setw(12) << student.final_exam_grade;
+        }
+        if (student.final_grade == -1){
+        	out << setw(10) << "N/A";
+        }
+        else{
+        	out << setw(10) << student.final_grade;
+        }
+        out << endl;
+    }
+
+    out.close();
+    cout << "student data has been output to file!" << endl;
+    transactions << "student grades have been output to file." << endl;
+
+}
+
+void save_data_to_file(GradeBook& grade_book, ofstream& transactions) {
+    ofstream out("Grades.dat");
+
+    out << grade_book.num_programs << " " << grade_book.num_tests << " " << grade_book.num_final_exams << endl;
+    out << grade_book.programs_weight << " " << grade_book.tests_weight << " " << grade_book.final_exam_weight << endl;
+
+    for (const auto& entry : grade_book.students) {
+        const Student& student = entry.second;
+        out << student.student_number << " " << student.last_name << " " << student.first_name;
+
+        for (int grade : student.programming_grades) {
+            out << " " << grade;
+        }
+
+        for (int grade : student.test_grades) {
+            out << " " << grade;
+        }
+
+        out << " " << student.final_exam_grade << " " << student.final_grade << endl;
+    }
+
+    out.close();
+    transactions << "quit function called, backing up grade book.";
+}
+
+void read_in_gradebook(GradeBook& grade_book){
+	ifstream inFile;
+	inFile.open("Grades.dat", ios::in);
+
+	if(!inFile.is_open()){
+		cout << "no previous grade book data found. you should start by selecting 'S'" << endl;
+		return;
+	}
+	else{
+		//setup gradebook
+		inFile >> grade_book.num_programs;
+		inFile >> grade_book.num_tests;
+		inFile >> grade_book.num_final_exams;
+		inFile >> grade_book.programs_weight;
+		inFile >> grade_book.tests_weight;
+		inFile >> grade_book.final_exam_weight;
+
+		//read in students
+		do{
+			string myString = " ";
+			int tempInt = 0;
+			inFile >> myString;
+			if(myString == " "){
+				cout << "previous grade book entry found. grade book data has been set up." << endl;
+				inFile.close();
+				return;
+			}
+			else{
+				Student student;
+				student.programming_grades.resize(grade_book.num_programs, -1);
+				student.test_grades.resize(grade_book.num_tests, -1);
+
+				tempInt = stoi(myString);
+				student.student_number = tempInt;
+				inFile >> myString;
+				student.last_name = myString;
+				inFile >> myString;
+				student.first_name = myString;
+				for (int i = 0; i<grade_book.num_programs;i++) {
+					inFile >> student.programming_grades[i];
+				}
+				for (int i = 0; i<grade_book.num_tests;i++) {
+					inFile >> student.test_grades[i];
+				}
+				for (int i = 0; i<grade_book.num_final_exams;i++) {
+					inFile >> student.final_exam_grade;
+				}
+				inFile >> student.final_grade;
+
+				grade_book.students[student.student_number] = student;
+			}
+		}while(!inFile.eof());
+
+	}
+
+	cout << "previous grade book entry found. grade book data has been set up." << endl;
+	inFile.close();
+
+}
