@@ -1,1 +1,152 @@
 
+#include <iostream>
+#include <fstream>
+#include "UnsortedList.h"
+
+int main() {
+    UnsortedList myList;
+
+    std::string inputFileName, outputFileName, testName, command;
+    std::ifstream inputFile;
+    std::ofstream outputFile;
+
+    std::cout << "Enter input file name: ";
+    std::cin >> inputFileName;
+    inputFile.open(inputFileName);
+
+    if (!inputFile.is_open()) {
+        std::cerr << "Error opening input file." << std::endl;
+        return 1;
+    }
+
+    std::cout << "Enter output file name: ";
+    std::cin >> outputFileName;
+    outputFile.open(outputFileName);
+
+    if (!outputFile.is_open()) {
+        std::cerr << "Error opening output file." << std::endl;
+        return 1;
+    }
+
+    std::cout << "Enter test name: ";
+    std::cin >> testName;
+
+    while (inputFile >> command) {
+        if (command == "GetLength") {
+            int length = myList.GetLength();
+            std::cout << "Length: " << length << std::endl;
+            outputFile << "Length: " << length << std::endl;
+        } else if (command == "PutItem") {
+            int item;
+            inputFile >> item;
+            myList.PutItem(item);
+        } else if (command == "PrintList") {
+            myList.PrintList();
+        } else if (command == "GetItem") {
+            int item;
+            inputFile >> item;
+            bool found = myList.GetItem(item);
+            std::cout << "Item found: " << (found ? "Yes" : "No") << std::endl;
+            outputFile << "Item found: " << (found ? "Yes" : "No") << std::endl;
+        } else if (command == "IsFull") {
+            bool isFull = myList.IsFull();
+            std::cout << "Is Full: " << (isFull ? "Yes" : "No") << std::endl;
+            outputFile << "Is Full: " << (isFull ? "Yes" : "No") << std::endl;
+        } else if (command == "DeleteItem") {
+            int item;
+            inputFile >> item;
+            myList.DeleteItem(item);
+        } else if (command == "MakeEmpty") {
+            myList.MakeEmpty();
+        } else if (command == "Quit") {
+            break;
+        } else {
+            std::cout << command << " is not a valid command" << std::endl;
+            outputFile << command << " is not a valid command" << std::endl;
+        }
+    }
+
+    outputFile.close();
+
+    return 0;
+}
+________________________________________________________________________________________
+   UnsortedList.h
+
+#ifndef UNSORTEDLIST_H
+#define UNSORTEDLIST_H
+
+class UnsortedList {
+public:
+    UnsortedList();  // Constructor
+    ~UnsortedList(); // Destructor
+
+    void PutItem(int item);
+    void DeleteItem(int item);
+    bool IsFull() const;
+    bool GetItem(int item) const;
+    void MakeEmpty();
+    int GetLength() const;
+    void PrintList() const;
+
+private:
+    static const int MAX_ITEMS = 100;
+    int length;
+    int list[MAX_ITEMS];
+};
+
+#endif // UNSORTEDLIST_H
+________________________________________________________________________________________
+unsorted.cpp
+#include "UnsortedList.h"
+#include <iostream>
+
+UnsortedList::UnsortedList() {
+    length = 0;
+}
+
+UnsortedList::~UnsortedList() {}
+
+void UnsortedList::PutItem(int item) {
+    if (length < MAX_ITEMS) {
+        list[length++] = item;
+    }
+}
+
+void UnsortedList::DeleteItem(int item) {
+    for (int i = 0; i < length; ++i) {
+        if (list[i] == item) {
+            list[i] = list[length - 1];
+            length--;
+            break;
+        }
+    }
+}
+
+bool UnsortedList::IsFull() const {
+    return (length == MAX_ITEMS);
+}
+
+bool UnsortedList::GetItem(int item) const {
+    for (int i = 0; i < length; ++i) {
+        if (list[i] == item) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void UnsortedList::MakeEmpty() {
+    length = 0;
+}
+
+int UnsortedList::GetLength() const {
+    return length;
+}
+
+void UnsortedList::PrintList() const {
+    for (int i = 0; i < length; ++i) {
+        std::cout << list[i] << " ";
+    }
+    std::cout << std::endl;
+}
