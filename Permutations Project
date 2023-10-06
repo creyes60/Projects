@@ -1,1 +1,152 @@
+//============================================================================
+// Name        : datastructuresassignment2.cpp
+// Author      : Christian Reyes
+// Version     :
+// Copyright   : Your copyright notice
+// Description : Hello World in C++, Ansi-style
+//============================================================================
+
+#include <iostream>
+using namespace std;
+
+const bool LtoR = true;
+const bool RtoL = false;
+
+int getMobileElement(int perm[], bool dir[], int size);
+void adjustPermutation(int perm[], bool dir[], int size);
+void printAllPermutations(int size);
+
+int main() {
+
+	int usernum = 0;					//the users input for the size of the set
+	int testCases[7] = {0,1,2,26,24,25,7};
+
+//	while (usernum <1 || usernum > 25){
+//		cout << "please enter a number to find its Johnson-Trotter permutations (max 25): ";
+//		cin >> usernum;
+//		cin.clear();
+//		cin.ignore(365, '\n');
+//		if (usernum <1 || usernum > 25){
+//			cout << "sorry that is not a valid input please try again" << endl;
+//		}
+//	}
+//	//this part test to make sure the user input is valid
+
+	for (int i = 0; i<7; i++){
+		usernum = testCases[i];
+		cout << "testing value of " << usernum << endl;
+		printAllPermutations(usernum);
+	}
+
+	return 0;
+}
+//======================================================end of main=============================================
+//parts of the following code were borrowed or based on the following source
+/***************************************************************************************
+*    Title: <johnson-trotter-algorithm>
+*    Author: <Shubhendra Singhal>
+*    Date: <9/6/23>
+*    Code version: <1>
+*    Availability: <https://www.geeksforgeeks.org/johnson-trotter-algorithm/#>
+*
+***************************************************************************************/
+int getMobileElement(int perm[], bool dir[], int size){
+    int Mobile = 0;
+    for (int i = 0; i < size; i++) {
+        if (dir[perm[i] - 1] == RtoL && i != 0) {
+            if (perm[i] > perm[i - 1] && perm[i] > Mobile) {
+                Mobile = perm[i];
+            }
+        }
+        //determine if the current mobile element is going right to left
+
+        if (dir[perm[i] - 1] == LtoR && i != size - 1) {
+            if (perm[i] > perm[i + 1] && perm[i] > Mobile) {
+                Mobile = perm[i];
+            }
+        }
+        //determine if the current mobile element if going left to right
+    }
+
+    if (Mobile == 0)
+        return 0; //were done
+    else
+        return Mobile; //keep going
+}
+//------------------------------------------------------end of getMobileElement----------------------------------
+void adjustPermutation(int perm[], bool dir[], int size){
+
+	int mobile = getMobileElement(perm, dir,size);
+	int pos = 0;
+
+	for (int i=0; i<size; i++){
+		if(perm[i] == mobile){
+			pos = i+1;
+		}
+	}
+	//determine current position
+
+    if (dir[perm[pos - 1] - 1] == RtoL)
+        swap(perm[pos - 1], perm[pos - 2]);
+
+    else if (dir[perm[pos - 1] - 1] == LtoR)
+        swap(perm[pos], perm[pos - 1]);
+    //swap if directions are correct
+
+    for (int i = 0; i < size; i++) {
+        if (perm[i] > mobile) {
+            if (dir[perm[i] - 1] == LtoR)
+                dir[perm[i] - 1] = RtoL;
+            else if (dir[perm[i] - 1] == RtoL)
+                dir[perm[i] - 1] = LtoR;
+        }
+    }
+    //change the direction of elements larger than the mobile one
+
+}
+//-----------------------------------------------------end of printPermutation--------------------------------------
+void printAllPermutations(int size){
+	//this part checks the user input to make sure the number entered is valid
+	if (size <1 || size > 25){
+		cout << "that is not a valid value!" << endl;
+		return;
+	}
+
+	int permutations[size];
+	for (int i=0; i<size;i++){
+		permutations[i] = i+1;
+	}
+	//fill up an array with the set of numbers based on what was entered
+	bool directions[size];
+	for (int i=0; i<size;i++){
+		directions[i] = RtoL;
+	}
+	//make an array which contains the directions of each of the members in the set
+	double factorial = 1;
+	for (int i=0; i<size;i++){
+		factorial = factorial * permutations[i];
+	}
+	//compute the n!
+	cout << "there are " << factorial << " permutations of the set {";
+	for (int i=0; i<size;i++){
+		cout << permutations[i];
+		if (i < size-1){
+			cout << ", ";
+		}
+	}
+	cout << "}" << endl;
+	//print the number of permutations and the base set to the screen
+
+    for (int i = 0; i < size; i++)
+        cout << permutations[i] << " ";
+    cout << endl;
+    //print the first permutation
+	for (int i=1; i<factorial; i++){
+		adjustPermutation(permutations,directions,size); // adjust the list to a new permutation
+	    for (int i = 0; i < size; i++)
+	        cout << permutations[i] << " ";
+	    cout << endl;
+	    //print all further permutations after setting them up
+	}
+}
 
