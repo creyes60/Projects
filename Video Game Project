@@ -1,1 +1,383 @@
+#include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Audio.hpp>
+#include <cstdlib>
+#include <ctime>
+#include <iostream>
 
+class Character {
+public:
+    std::string name;
+    int health;
+    int attack;
+    const int initialHealth;
+
+    Character(const std::string& n, int hp, int atk)
+            : name(n), health(hp), attack(atk), initialHealth(hp) {}
+
+    bool isAlive() const {
+        return health > 0;
+    }
+
+    void takeDamage(int damage) {
+        health -= damage;
+        if (health < 0) {
+            health = 0;
+        }
+    }
+};
+
+class AICharacter {
+public:
+    std::string name;
+    int health;
+    int attack;
+    const int initialHealth;
+
+    AICharacter(const std::string& n, int hp, int atk)
+            : name(n), health(hp), attack(atk), initialHealth(hp) {}
+
+    bool isAlive() const {
+        return health > 0;
+    }
+
+    void takeDamage(int damage) {
+        health -= damage;
+        if (health < 0) {
+            health = 0;
+        }
+    }
+
+    int performAIAction() {
+        if (std::rand() % 2 == 0) {
+            return 0;
+        } else {
+            return std::rand() % attack + 1;
+        }
+    }
+};
+
+class Fighter {
+private:
+    sf::SoundBuffer attackBuffer;
+    sf::Sound attackSound;
+
+public:
+    std::string name;
+    int performAIAction() {
+        return std::rand() % 2 == 0 ? 0 : (std::rand() % attack) + 1;
+    }
+
+    int health;
+    int attack;
+    const int initialHealth;
+    sf::Texture texture;
+    sf::Sprite sprite;
+
+    Fighter(const std::string& n, int hp, int atk, const std::string& texturePath)
+            : name(n), health(hp), attack(atk), initialHealth(hp) {
+        if (!texture.loadFromFile(texturePath)) {
+            std::cerr << "Failed to load texture for fighter: " << n << std::endl;
+        }
+
+        sprite.setTexture(texture);
+        sprite.setPosition(-200, 100);
+    }
+
+    sf::Texture idleTexture;
+    sf::Texture attackTexture;
+
+    Fighter(const std::string& n, int hp, int atk, const std::string& idleImg, const std::string& attackImg)
+            : name(n), health(hp), attack(atk), initialHealth(hp) {
+        // Load textures for animations
+        if (!idleTexture.loadFromFile(idleImg) || !attackTexture.loadFromFile(attackImg)) {
+            std::cerr << "Failed to load textures for animations." << std::endl;
+        }
+
+        // Set the idle and attack textures
+        sprite.setTexture(idleTexture);
+        attackTexture.setSmooth(true);
+        idleTexture.setSmooth(true);
+        sprite.setPosition(800, 100); // Set the initial position here
+        // Load sound buffer for attack sound
+        if (!attackBuffer.loadFromFile("attacksound.wav")) {
+            std::cerr << "Failed to load attack sound." << std::endl;
+            // Set the sound buffer for the attack sound
+
+        }
+        attackSound.setBuffer(attackBuffer);
+        attackSound.setVolume(100);
+    }
+
+
+
+
+    bool isAlive() const {
+        return health > 0;
+    }
+
+    void playAttackSound() {
+        attackSound.play();
+    }
+
+    void takeDamage(int damage) {
+        health -= damage;
+        if (health < 0) {
+            health = 0;
+        }
+    }
+
+    // Function to get the current texture based on the action
+    sf::Texture& getCurrentTexture(bool isAttack) {
+        return isAttack ? attackTexture : idleTexture;
+    }
+
+    float getHealthPercentage() const {
+        return static_cast<float>(health) / static_cast<float>(initialHealth);
+    }
+};
+
+// Function to draw the fighter sprite
+
+
+void drawFighter(sf::RenderWindow& window, Fighter& fighter, bool isAttack) {
+    fighter.sprite.setTexture(fighter.getCurrentTexture(isAttack));
+    window.draw(fighter.sprite);
+}
+
+
+
+void updateAnimations(Fighter& player, Fighter& ai, bool playerIsAttacking, bool aiIsAttacking) {
+    // You can add more advanced animation logic here (e.g., changing frames in a spritesheet)
+    // For simplicity, we'll just print a message indicating the attack
+    if (playerIsAttacking) {
+        std::cout << "Player is attacking!" << std::endl;
+    }
+    if (aiIsAttacking) {
+        std::cout << "AI is attacking!" << std::endl;
+    }
+}
+
+void showMainMenu(sf::RenderWindow& window, sf::Font& font, sf::Texture& backgroundTexture) {
+    sf::Sprite backgroundSprite(backgroundTexture);
+    backgroundSprite.setScale(
+            static_cast<float>(window.getSize().x) / backgroundTexture.getSize().x,
+            static_cast<float>(window.getSize().y) / backgroundTexture.getSize().y
+    );
+
+    sf::Text title("RPG Battle", font, 55);
+    title.setFillColor(sf::Color::White);
+    title.setStyle(sf::Text::Bold);
+    title.setOrigin(title.getLocalBounds().width / 2, title.getLocalBounds().height / 2);
+    title.setPosition(window.getSize().x / 2.0f, window.getSize().y / 4.0f);
+
+    sf::Text startText("Press Enter to Start", font, 24);
+    startText.setFillColor(sf::Color::White);
+    startText.setOrigin(startText.getLocalBounds().width / 2, startText.getLocalBounds().height / 2);
+    startText.setPosition(window.getSize().x / 2.0f, window.getSize().y / 2.0f);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return) {
+                return;
+            }
+        }
+
+        window.clear();
+        window.draw(backgroundSprite);
+        window.draw(title);
+        window.draw(startText);
+        window.display();
+    }
+}
+
+int main() {
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    sf::RenderWindow menuWindow(sf::VideoMode(800, 600), "Main Menu");
+
+    sf::Texture menuBackgroundTexture;
+    if (!menuBackgroundTexture.loadFromFile("menubackground.jpg")) {
+        std::cerr << "Failed to load main menu background image." << std::endl;
+        return -1;
+    }
+
+    sf::Font font;
+    if (!font.loadFromFile("joystix monospace.otf")) {
+        std::cerr << "Failed to load font for main menu." << std::endl;
+        return -1;
+    }
+
+    showMainMenu(menuWindow, font, menuBackgroundTexture);
+    menuWindow.close();
+
+    int initialHealth = 100;
+
+    Fighter playerFighter("Player", initialHealth, 20, "player.png");
+    Fighter aiFighter("AI Opponent", initialHealth, 18, "player2.png");
+
+    Fighter player2Fighter("Player 2", initialHealth, 22, "player2.png", "player2.png");
+
+
+
+    sf::RenderWindow window(sf::VideoMode(800, 600), "RPG Battle");
+    sf::Texture backgroundTexture;
+    if (!backgroundTexture.loadFromFile("background1.png")) {
+        std::cerr << "Failed to load background image." << std::endl;
+        return -1;
+    }
+
+    sf::Sprite backgroundSprite(backgroundTexture);
+    backgroundSprite.setScale(
+            static_cast<float>(window.getSize().x) / backgroundTexture.getSize().x,
+            static_cast<float>(window.getSize().y) / backgroundTexture.getSize().y
+    );
+
+    sf::Text message;
+    message.setFont(font);
+    message.setCharacterSize(25);
+    message.setFillColor(sf::Color::Black);
+    sf::FloatRect messageRect = message.getLocalBounds();
+    message.setOrigin(messageRect.left + messageRect.width / 2.0f, messageRect.top + messageRect.height / 2.0f);
+    message.setPosition(125, static_cast<float>(window.getSize().y) / 5.0f);
+
+    sf::Text playerHealthText("Player Health: " + std::to_string(playerFighter.health), font, 20);
+    playerHealthText.setPosition(10, 10);
+    playerHealthText.setFillColor(sf::Color::Black);
+
+    sf::Text aiHealthText("AI Health: " + std::to_string(aiFighter.health), font, 20);
+    aiHealthText.setPosition(550, 10);
+    aiHealthText.setFillColor(sf::Color::Black);
+
+    sf::RectangleShape attackButton(sf::Vector2f(200, 50));
+    attackButton.setFillColor(sf::Color::Green);
+    attackButton.setPosition((window.getSize().x - attackButton.getSize().x) / 2, window.getSize().y - 100);
+    sf::Text attackText("Attack", font, 24);
+    attackText.setPosition(attackButton.getPosition().x + 10, attackButton.getPosition().y + 10);
+
+    sf::RectangleShape defendButton(sf::Vector2f(200, 50));
+    defendButton.setFillColor(sf::Color::Red);
+    defendButton.setPosition((window.getSize().x - defendButton.getSize().x) / 2, window.getSize().y - 50);
+    sf::Text defendText("Defend", font, 24);
+    defendText.setPosition(defendButton.getPosition().x + 10, defendButton.getPosition().y + 10);
+
+    sf::Text playerActionText("", font, 20);
+    playerActionText.setFillColor(sf::Color::Black);
+    playerActionText.setOrigin(playerActionText.getLocalBounds().width / 1,
+                               playerActionText.getLocalBounds().height / 2);
+    playerActionText.setPosition(100, static_cast<float>(window.getSize().y) / 6.0f - 50);
+
+    sf::Text aiActionText("", font, 20);
+    aiActionText.setFillColor(sf::Color::Black);
+    aiActionText.setOrigin(aiActionText.getLocalBounds().width / 1, aiActionText.getLocalBounds().height / 2);
+    aiActionText.setPosition(100, static_cast<float>(window.getSize().y) / 6.0f);
+
+    // Load background music
+    sf::Music backgroundMusic;
+    if (!backgroundMusic.openFromFile("backgroundmusic.mp3")) {
+        std::cerr << "Failed to load background music." << std::endl;
+        return -1;
+    }
+    backgroundMusic.play();
+
+    int currentTurn = 0;
+    float player2X = 700.0f;
+    float player2Y = 500.0f;
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+
+            if (!playerFighter.isAlive() || !aiFighter.isAlive()) {
+                continue;
+            }
+
+            if (event.type == sf::Event::MouseButtonPressed) {
+                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                if (currentTurn == 0) {
+                    if (attackButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                        int playerDamage = std::rand() % playerFighter.attack + 1;
+                        aiFighter.takeDamage(playerDamage);
+                        playerActionText.setString(
+                                "You attack the AI for " + std::to_string(playerDamage) + " damage.");
+                        playerFighter.playAttackSound();  // Play the attack sound
+
+
+                            sf::sleep(sf::milliseconds(10));  // Add a delay of 1 second
+
+                        currentTurn = 1;
+                    } else if (defendButton.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos))) {
+                        playerActionText.setString("You prepare to defend.");
+                        currentTurn = 1;
+                    }
+                }
+            }
+        }
+
+        if (currentTurn == 1 && aiFighter.isAlive()) {
+            int aiAction = aiFighter.performAIAction();
+            if (aiAction == 0) {
+                aiActionText.setString("The AI prepares to defend.");
+            } else {
+                int aiDamage = aiAction;
+                playerFighter.takeDamage(aiDamage);
+                aiActionText.setString("The AI attacks you for " + std::to_string(aiDamage) + " damage.");
+            }
+            currentTurn = 0;
+            sf::sleep(sf::milliseconds(1000));
+        }
+
+        playerHealthText.setString("Player Health: " + std::to_string(playerFighter.health));
+        aiHealthText.setString("AI Health: " + std::to_string(aiFighter.health));
+
+        if (!playerFighter.isAlive() || !aiFighter.isAlive()) {
+            if (!playerFighter.isAlive()) {
+                message.setString("You have been defeated!");
+            } else {
+                message.setString("You have defeated the AI!");
+            }
+            attackButton.setFillColor(sf::Color::Green);
+            defendButton.setFillColor(sf::Color::Red);
+        }
+
+        // Update X-coordinate of player2Fighter
+        player2X += 1.0f;  // Adjust the value based on your desired movement speed
+        player2Fighter.sprite.setPosition(player2X, player2Y);
+        aiFighter.sprite.setPosition(215, 100);
+
+        window.clear();
+
+        window.draw(backgroundSprite);  // Draw the background
+        window.draw(attackButton);
+        window.draw(attackText);
+        window.draw(defendButton);
+        window.draw(defendText);
+        window.draw(message);
+        window.draw(playerHealthText);
+        window.draw(aiHealthText);
+
+        if (playerFighter.isAlive() && aiFighter.isAlive()) {
+            window.draw(playerActionText);
+            window.draw(aiActionText);
+        }
+
+        // Draw the fighters
+        window.draw(playerFighter.sprite);
+        window.draw(aiFighter.sprite);
+        window.draw(player2Fighter.sprite);  // Draw the second player fighter
+
+        window.display();
+    }
+
+    backgroundMusic.stop();
+
+    return 0;
+}
