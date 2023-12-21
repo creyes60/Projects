@@ -1,1 +1,172 @@
+/**********************************************************************************
+*Title: C++ Plus Data Structures
+*Author: Nell Dale, Chip Weems
+*Date: 11/07/2023
+*Code version: unavailable
+*Availability: https://www.jblearning.com/catalog/productdetails/9781284089189
+*
+**********************************************************************************/
+//============================================================================
+// Name        : assignment.cpp
+// Author      : Armand Tirado, Christian Reyes, Janette Tse
+// Version     :
+// Copyright   : Your copyright notice
+// Description : Hello World in C++, Ansi-style
+//============================================================================
+
+#include <iostream>
+#include <fstream>
+#include <cstdlib>
+#include <chrono>
+const int SIZE = 100000;
+using namespace std;
+void Swap(int& item1, int& item2);//this needs to be here so the sorts can use it
+#include "InsertionSort.h"
+#include "QuickSort.h"
+#include "BubbleSort.h"
+#include "HeapSort.h"
+
+void InitValues(int[]);			// Creates random array
+void CopyValues(int[], int[]);	// Makes a copy of an array
+void Print(ofstream&, int[]);	// Prints array
+
+int main() {
+
+	//--------------variables----------------------
+	string command;        // operation to be executed
+	int values[SIZE];
+	int copyValues[SIZE];
+	ifstream inFile;       // file containing operations
+	ofstream outFile;      // file containing output
+	string inFileName;     // input file external name
+	string outFileName;    // output file external name
+	string outputLabel;
+	chrono::time_point<chrono::system_clock> start;
+	chrono::time_point<chrono::system_clock> end;
+
+	//--------------file initialization-------------
+	// Prompt for file names, read file names, and prepare files
+	cout << "Enter name of input command file; press return." << endl;
+	getline(cin,inFileName);
+	inFile.open(inFileName.c_str());
+
+	cout << "Enter name of output file; press return." << endl;
+	getline(cin,outFileName);
+	outFile.open(outFileName.c_str());
+
+	cout << "Enter name of test run; press return." << endl;
+	getline(cin,outputLabel);
+	outFile << outputLabel << endl;
+
+	InitValues(values);
+	CopyValues(values, copyValues);
+	outFile << "our " << SIZE << " numbers that we are testing with are:" << endl;
+	Print(outFile, values);
+	outFile << endl;
+
+	//--------------------sorts--------------------
+	inFile >> command;
+	cout << "now attempting first command!" << endl;
+	while(command != "Quit"){
+		if(command == "Refresh"){	//call this one after each test
+			CopyValues(copyValues, values);
+		}
+	    else if (command == "BubbleSort"){
+	    	start = chrono::system_clock::now(); // Record start time
+	    	BubbleSort(values, SIZE);
+	    	end = chrono::system_clock::now(); // Record end time
+	    	outFile << "Results from BubbleSort: " << endl;
+	    	Print(outFile, values);
+	    	outFile << endl;
+	    	chrono::duration<float> elapsed = end-start;   // Calculate and report time
+	    	cout << "Execution time in seconds for Bubble sort = " << elapsed.count() << "\n";
+	    }
+	    else if (command == "QuickSort"){
+	    	start = chrono::system_clock::now(); // Record start time
+	    	QuickSort(values,  0, SIZE-1);
+	    	end = chrono::system_clock::now(); // Record end time
+	    	outFile << "Results from QuickSort: " << endl;
+	    	Print(outFile, values);
+	    	outFile << endl;
+	    	chrono::duration<float> elapsed = end-start;   // Calculate and report time
+	    	cout << "Execution time in seconds for quick sort = " << elapsed.count() << "\n";
+	    }
+	    else if (command == "InsertionSort"){
+	    	start = chrono::system_clock::now(); // Record start time
+	    	InsertionSort(values,  SIZE);
+	    	end = chrono::system_clock::now(); // Record end time
+	    	outFile << "Results from InsertionSort: " << endl;
+	    	Print(outFile, values);
+	    	outFile << endl;
+	    	chrono::duration<float> elapsed = end-start;   // Calculate and report time
+	    	cout << "Execution time in seconds for insertion sort = " << elapsed.count() << "\n";
+	    }
+	    else if (command == "HeapSort"){
+	    	start = chrono::system_clock::now(); // Record start time
+	    	HeapSort(values, SIZE);
+	    	end = chrono::system_clock::now(); // Record end time
+	    	outFile << "Results from HeapSort: " << endl;
+	    	Print(outFile, values);
+	    	outFile << endl;
+	    	chrono::duration<float> elapsed = end-start;   // Calculate and report time
+	    	cout << "Execution time in seconds for heap sort = " << elapsed.count() << "\n";
+	    }
+		else{
+			outFile << "Input not recognized." << endl;
+	    }
+	    cout << "Command " << command << " completed." << endl;
+	    inFile >> command;
+	}//while
+
+	cout << "Testing completed."  << endl;
+	inFile.close();
+	outFile.close();
+	return 0;
+}
+
+//-----------------------functions down here--------------------------------------------------------------
+
+void InitValues(int values[]){
+// initializes the values array with random integers from 0 to 99
+	srand(time(NULL));
+	for (int index = 0; index < SIZE; index++)
+		values[index] = (std::rand() % 10000);
+}
+
+void CopyValues(int inData[], int outData[]){
+	for (int count = 0; count < SIZE; count++)
+		outData[count] = inData[count];
+}
+
+void Print(ofstream& outFile, int values[]){
+	for (int count = 0; count < SIZE; count++){
+		if (count < SIZE-1){
+			outFile << values[count]  << ", ";
+		}
+		else{
+			outFile << values[count];
+		}
+		if ((count+1)%20 == 0){
+			outFile << endl;
+		}
+	}
+	outFile << endl;
+
+}
+void Swap(int& item1, int& item2){
+	//this function is used in the sorts
+	int tempItem;
+
+	tempItem = item1;
+	item1 = item2;
+	item2 = tempItem;
+}
+
+
+
+
+
+
+
+
 
